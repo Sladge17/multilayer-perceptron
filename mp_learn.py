@@ -30,9 +30,9 @@ def softmax(target):
 	return softmax
 
 f = {"sigmoid" : sigmoid,
-		"hyptan" : hyptan,
-		"relu" : relu}
+	"hyptan" : hyptan,
+	"relu" : relu}
 
 f_drv = {"sigmoid" : sigmoid_derivative,
-			"hyptan" : hyptan_derivative,
-			"relu" : relu_derivative}
+		"hyptan" : hyptan_derivative,
+		"relu" : relu_derivative}
