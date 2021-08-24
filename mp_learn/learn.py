@@ -68,10 +68,10 @@ def init_params(arch):
 	for i in range(arch.size - 1):
 		x[i] = np.ones(arch[i] + 1, np.float32)
 
-		weight[i] = np.random.rand(x[i].size, arch[i + 1])
+		# weight[i] = np.random.rand(x[i].size, arch[i + 1])
 		
-		# a = 1 / np.sqrt(arch[i])
-		# weight[i] = a * np.random.rand(x[i].size, arch[i + 1])
+		a = 1 / np.sqrt(arch[i])
+		weight[i] = a * np.random.rand(x[i].size, arch[i + 1])
 
 		# a = 1 / np.sqrt(arch[i] / 2)
 		# weight[i] = a * np.random.rand(x[i].size, arch[i + 1])
@@ -83,6 +83,10 @@ def init_params(arch):
 	dx[-1] = np.zeros(x[-1].size, np.float32)
 
 	return x, weight, dx, dw
+
+def cross_entropy(x, y):
+	cross_entropy = -np.log(x[np.argmax(y)])
+	return cross_entropy
 
 
 
@@ -101,7 +105,9 @@ def learn_mp(x_train, y_train, arch, f_act, epochs, alpha, batch):
 			x[-1][:] = f[f_act](x[-2]) @ weight[-1]
 
 			## set error
-			error[epoch] -= y_train[i] @ np.log(softmax(x[-1]))
+			# error[epoch] -= y_train[i] @ np.log(softmax(x[-1]))
+			# error[epoch] -= np.log(softmax(x[-1])[np.argmax(y_train[i])])
+			error[epoch] += cross_entropy(softmax(x[-1]), y_train[i])
 			
 			## back propagation
 			dx[-1][:] = softmax(x[-1]) - y_train[i]
