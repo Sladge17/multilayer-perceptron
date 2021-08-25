@@ -4,7 +4,7 @@ from mp_learn.funcs import *
 
 def init_params(arch):
 	z = [0] * arch.size
-	
+
 	x = [0] * (arch.size - 2)
 	dx = [0] * (arch.size - 1)
 
@@ -17,7 +17,7 @@ def init_params(arch):
 		# weight[i] = np.random.rand(x[i].size, arch[i + 1])
 		
 		if i < arch.size - 2:
-			x[i] = np.zeros(arch[i + 1], np.float32)
+			x[i] = np.zeros([1, arch[i + 1]], np.float32)
 			# dx[i] = np.zeros(x[i].size, np.float32)
 			dx[i] = np.zeros_like(x[i])
 
@@ -34,7 +34,7 @@ def init_params(arch):
 	
 	z[-1] = np.ones([1, arch[-1]], np.float32)
 	# dx[-1] = np.zeros(z[-1][0].size, np.float32)
-	dx[-1] = np.zeros_like(z[-1][0])
+	dx[-1] = np.zeros_like(z[-1])
 
 	return z, x, weight, dx, dw
 
@@ -54,8 +54,8 @@ def learn_mp(x_train, y_train, arch, f_act, epochs, alpha, batch):
 			# ## forward propagation
 			z[0][0, :-1] = x_train[i]
 			for j in range(1, arch.size - 1):
-				x[j - 1][:] = z[j - 1][0] @ weight[j - 1]
-				z[j][0, :-1] = f[f_act](x[j - 1])
+				x[j - 1][0][:] = z[j - 1][0] @ weight[j - 1]
+				z[j][0, :-1] = f[f_act](x[j - 1][0])
 			z[-1][0, :] = softmax(z[-2][0] @ weight[-1])
 
 			## set error
@@ -63,20 +63,20 @@ def learn_mp(x_train, y_train, arch, f_act, epochs, alpha, batch):
 
 
 			## back propagation
-			dx[-1][:] = z[-1][0] - y_train[i]
+			dx[-1][0][:] = z[-1][0] - y_train[i]
 			for j in range(arch.size - 2, 0, -1):
-				dw[j][:] += z[j].T * dx[j]
+				dw[j][:, :] += z[j].T @ dx[j]
 
-				dx[j - 1][:] = (dx[j] @ weight[j].T)[:-1] * f_drv[f_act](x[j - 1])
+				dx[j - 1][0][:] = (dx[j][0] @ weight[j].T)[:-1] * f_drv[f_act](x[j - 1][0])
 
 				# dx[j][:] = ((dx[j + 1] @ weight[j].T) * sigmoid_derivative(x[j]))[:-1]
-			dw[0][:] += z[0].T * dx[0]
+			dw[0][:, :] += z[0].T @ dx[0]
 
 		## update weight
 		for i in range(len(weight)):
 			# weight[i][:] = weight[i] - dw[i] * alpha
-			weight[i][:] -= dw[i] * alpha
-			dw[i][:] = 0
+			weight[i][:, :] -= dw[i] * alpha
+			dw[i][:, :] = 0
 
 	return weight, error
 
