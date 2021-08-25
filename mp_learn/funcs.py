@@ -20,15 +20,27 @@ def relu(target):
 	relu = np.maximum(target, 0)
 	return relu
 
+# def relu_derivative(target):
+# 	derivative = np.ones_like(target)
+# 	derivative[target < 0] = 0
+# 	return derivative
+
 def relu_derivative(target):
-	derivative = np.ones_like(target)
-	derivative[target < 0] = 0
-	return derivative
+	deriv = (target >= 0).astype(np.float32) 
+	return deriv
+
 
 def softmax(target):
 	target = np.exp(target)
 	softmax = target / np.sum(target)
 	return softmax
+
+
+def softmax_batch(target):
+	target = np.exp(target)
+	softmax = target / np.sum(target, axis=1, keepdims=True)
+	return softmax
+
 
 f = {"sigmoid" : sigmoid,
 	"hyptan" : hyptan,
