@@ -97,6 +97,7 @@ def learn_mp(x_train, y_train, arch, f_act, epochs, alpha, batch):
 	error = np.zeros(epochs, np.float32)
 
 	z_epoch = np.zeros_like(y_train, np.float32)
+	xy_train = np.zeros_like(np.concatenate((x_train, y_train), axis=1))
 
 	for epoch in range(epochs):
 
@@ -146,7 +147,13 @@ def learn_mp(x_train, y_train, arch, f_act, epochs, alpha, batch):
 		## set error
 		# error[epoch] += cross_entropy(z[-1][0], y_train[i])
 		# error[epoch] += np.sum(cross_entropy_batch(z[-1], y_train))
-		error[epoch] += np.sum(cross_entropy_batch(z_epoch, y_train))
+		error[epoch] = np.sum(cross_entropy_batch(z_epoch, y_train))
+
+		# shuffle dataset
+		xy_train[:, :] = np.concatenate((x_train, y_train), axis=1)
+		np.random.shuffle(xy_train)
+		x_train[:, :] = xy_train[:, :-2]
+		y_train[:, :] = xy_train[:, -2:]
 
 	return weight, error
 
