@@ -108,4 +108,3 @@ def learn_mp(x_train, y_train, arch, f_act, epochs, alpha, batch):
 		set_shuffle(x_train, y_train, xy_train)
 	
 	return weight, error, accuracy
-
