@@ -26,7 +26,7 @@ def relu(target):
 # 	return derivative
 
 def relu_derivative(target):
-	deriv = (target >= 0).astype(np.float32) 
+	deriv = (target >= 0).astype(np.float32)
 	return deriv
 
 
