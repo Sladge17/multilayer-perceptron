@@ -20,8 +20,8 @@ def init_arch(arch, batch):
 	return z, x, weight, dx, dw
 
 def init_metrics(epochs, y_train):
-	error = np.zeros(epochs, np.float32)
-	accuracy = np.zeros(epochs, np.float32)
+	error = np.zeros([2, epochs], np.float32)
+	accuracy = np.zeros([2, epochs], np.float32)
 	z_epoch = np.zeros_like(y_train, np.float32)
 	return error, accuracy, z_epoch
 
@@ -107,18 +107,13 @@ def init_adam(start_velocity, dw):
 def learn_mp(x_train, y_train, arch, f_act, epochs, alpha, batch, start_velocity):
 
 	# get validation part
-	percent_valid = 10
-	border_valid = int(x_train.shape[0] * (100 - percent_valid) * 0.01)
+	# percent_valid = 10
+	# border_valid = int(x_train.shape[0] * (100 - percent_valid) * 0.01)
+	border_valid = int(x_train.shape[0] * 0.9)
 	y_valid = y_train[border_valid:]
 	x_valid = x_train[border_valid:]
 	y_train = y_train[:border_valid]
 	x_train = x_train[:border_valid]
-
-	error_val = np.zeros(epochs, np.float32)
-	accuracy_val = np.zeros(epochs, np.float32)
-	z_epoch_val = np.zeros_like(y_valid, np.float32)
-
-	
 	
 	z, x, weight, dx, dw = init_arch(arch, batch)
 	border = np.zeros(2, np.int32)
@@ -153,8 +148,8 @@ def learn_mp(x_train, y_train, arch, f_act, epochs, alpha, batch, start_velocity
 			set_forward_propagation_tail(z, x, weight, arch, f_act, x_train, border)
 			z_epoch[border[0] :, :] = z[-1][: border[1]]
 		
-		error[epoch] = np.sum(cross_entropy_batch(z_epoch, y_train))
-		accuracy[epoch] = get_accuracy(z_epoch, y_train)
+		error[0, epoch] = np.sum(cross_entropy_batch(z_epoch, y_train))
+		accuracy[0, epoch] = get_accuracy(z_epoch, y_train)
 
 		set_shuffle(x_train, y_train, xy_train)
 
@@ -163,20 +158,21 @@ def learn_mp(x_train, y_train, arch, f_act, epochs, alpha, batch, start_velocity
 				border[0] = i * batch
 				border[1] = (i + 1) * batch
 				set_forward_propagation(z, x, weight, arch, f_act, x_valid, border)
-				z_epoch_val[border[0] : border[1], :] = z[-1]
+				z_epoch[border[0] : border[1], :] = z[-1]
 			
 			if x_valid.shape[0] % batch:
 				border[0] = border[1]
 				border[1] = x_valid.shape[0] - border[0]
 				set_forward_propagation_tail(z, x, weight, arch, f_act, x_valid, border)
-				z_epoch_val[border[0] :, :] = z[-1][: border[1]]
+				z_epoch[border[0] :, :] = z[-1][: border[1]]
 		else:
 			border[0] = 0
 			border[1] = x_valid.shape[0]
 			set_forward_propagation_tail(z, x, weight, arch, f_act, x_valid, border)
-			z_epoch_val[border[0] :, :] = z[-1][: border[1]]
+			z_epoch[: border[1], :] = z[-1][: border[1]]
+
 		
-		error_val[epoch] = np.sum(cross_entropy_batch(z_epoch_val, y_valid))
-		accuracy_val[epoch] = get_accuracy(z_epoch_val, y_valid)
+		error[1, epoch] = np.sum(cross_entropy_batch(z_epoch[border[0] : border[1]], y_valid))
+		accuracy[1, epoch] = get_accuracy(z_epoch[border[0] : border[1]], y_valid)
 	
-	return weight, error, accuracy, error_val, accuracy_val
+	return weight, error, accuracy
