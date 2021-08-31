@@ -2,6 +2,14 @@ import numpy as np
 from mp_learn.funcs import *
 # from funcs import *
 
+def init_datasets(x_train, y_train):
+	border = int(x_train.shape[0] * 0.9)
+	y_valid = y_train[border:]
+	x_valid = x_train[border:]
+	y_train = y_train[:border]
+	x_train = x_train[:border]
+	return x_train, y_train, x_valid, y_valid
+
 def init_arch(arch, batch):
 	z = [0] * arch.size
 	x = [0] * (arch.size - 2)
@@ -19,54 +27,55 @@ def init_arch(arch, batch):
 	dx[-1] = np.zeros_like(z[-1])
 	return z, x, weight, dx, dw
 
+def init_optimizer(start_velocity, dw):
+	velocity = [0] * len(dw)
+	accumulator = [0] * len(dw)
+	for i in range(len(dw)):
+		velocity[i] = np.full(dw[i].shape, start_velocity, np.float32)
+		accumulator[i] = np.zeros(dw[i].shape, np.float32)
+	return velocity, accumulator
+
 def init_metrics(epochs, y_train):
 	error = np.zeros([2, epochs], np.float32)
 	accuracy = np.zeros([2, epochs], np.float32)
 	z_epoch = np.zeros_like(y_train, np.float32)
 	return error, accuracy, z_epoch
 
-def set_forward_propagation(z, x, weight, arch, f_act, x_train, border):
+def train_trainds(z, x, weight, dx, dw, arch, f_act, x_train, y_train,\
+					batch, border, alpha, velocity, accumulator):
+	for i in range(x_train.shape[0] // batch):
+		border[0] = i * batch
+	border[1] = (i + 1) * batch
+	forward_propagation(z, x, weight, arch, f_act, x_train, border)
+	back_propagation(z, x, weight, dx, dw, arch, f_act, y_train, border)
+	update_weight_adam(weight, dw, alpha, velocity, accumulator)
+
+def forward_propagation(z, x, weight, arch, f_act, x_train, border):
 	z[0][:, :-1] = x_train[border[0] : border[1]]
 	for j in range(1, arch.size - 1):
 		x[j - 1][:, :] = z[j - 1] @ weight[j - 1]
 		z[j][:, :-1] = f[f_act](x[j - 1])
 	z[-1][:, :] = softmax_batch(z[-2] @ weight[-1])
 
-def set_back_propagation(z, x, weight, dx, dw, arch, f_act, y_train, border):
+def back_propagation(z, x, weight, dx, dw, arch, f_act, y_train, border):
 	dx[-1][:, :] = z[-1] - y_train[border[0] : border[1]]
 	for j in range(arch.size - 2, 0, -1):
 		dw[j][:, :] = z[j].T @ dx[j]
 		dx[j - 1][:, :] = (dx[j] @ weight[j].T)[:, :-1] * f_drv[f_act](x[j - 1])
 	dw[0][:, :] = z[0].T @ dx[0]
 
-def set_update_weight(weight, dw, alpha, velocity, accumulator):
-	# for j in range(len(weight)):
-	# 	weight[j][:, :] -= dw[j] * alpha
-
-	beta1 = 0.9
-	beta2 = 0.9
-
-	## adagrad
-	# for j in range(len(weight)):
-	# 	accumulator[j][:, :] += dw[j] ** 2
-	# 	weight[j][:, :] -= dw[j] * (alpha / np.sqrt(accumulator[j]))
-
-	
-	# # adam
+def update_weight_adam(weight, dw, alpha, velocity, accumulator):
 	for j in range(len(weight)):
-		velocity[j][:, :] = beta1 * velocity[j] + (1 - beta1) * dw[j]
-		accumulator[j][:, :] = beta2 * accumulator[j] + (1 - beta2) * (dw[j] ** 2)
+		velocity[j][:, :] = 0.9 * velocity[j] + (1 - 0.9) * dw[j]
+		accumulator[j][:, :] = 0.9 * accumulator[j] + (1 - 0.9) * (dw[j] ** 2)
 		weight[j][:, :] -= velocity[j] * (alpha / np.sqrt(accumulator[j]))
-	
-	## rmsprop
-	# for j in range(len(weight)):
-	# 	accumulator[j][:, :] = beta2 * accumulator[j] + (1 - beta2) * (dw[j] ** 2)
-	# 	weight[j][:, :] -= dw[j] * (alpha / np.sqrt(accumulator[j]))
-	
-	## momentum
-	# for j in range(len(weight)):
-	# 	velocity[j][:, :] = beta1 * velocity[j] - alpha * dw[j]
-	# 	weight[j][:, :] += velocity[j]
+
+
+
+
+
+
+
 
 def set_forward_propagation_tail(z, x, weight, arch, f_act, x_train, border):
 	z[0][: border[1], :-1] = x_train[border[0] :]
@@ -94,52 +103,26 @@ def set_shuffle(x_train, y_train, xy_train):
 	y_train[:, :] = xy_train[:, -2:]
 
 
-def init_adam(start_velocity, dw):
-	velocity = [0] * len(dw)
-	accumulator = [0] * len(dw)
-	for i in range(len(dw)):
-		velocity[i] = np.full(dw[i].shape, start_velocity, np.float32)
-		accumulator[i] = np.zeros(dw[i].shape, np.float32)
-	return velocity, accumulator
 
 
 
 def learn_mp(x_train, y_train, arch, f_act, epochs, alpha, batch, start_velocity):
-
-	# get validation part
-	# percent_valid = 10
-	# border_valid = int(x_train.shape[0] * (100 - percent_valid) * 0.01)
-	border_valid = int(x_train.shape[0] * 0.9)
-	y_valid = y_train[border_valid:]
-	x_valid = x_train[border_valid:]
-	y_train = y_train[:border_valid]
-	x_train = x_train[:border_valid]
-	
+	x_train, y_train, x_valid, y_valid = init_datasets(x_train, y_train)
 	z, x, weight, dx, dw = init_arch(arch, batch)
 	border = np.zeros(2, np.int32)
-
-	velocity, accumulator = init_adam(start_velocity, dw)
-	
+	velocity, accumulator = init_optimizer(start_velocity, dw)
 	error, accuracy, z_epoch = init_metrics(epochs, y_train)
-
 	xy_train = np.zeros_like(np.concatenate((x_train, y_train), axis=1))
 
 	for epoch in range(epochs):
-		
-		## training
-		for i in range(x_train.shape[0] // batch):
-			border[0] = i * batch
-			border[1] = (i + 1) * batch
-
-			set_forward_propagation(z, x, weight, arch, f_act, x_train, border)
-			set_back_propagation(z, x, weight, dx, dw, arch, f_act, y_train, border)
-			set_update_weight(weight, dw, alpha, velocity, accumulator)
+		train_trainds(z, x, weight, dx, dw, arch, f_act, x_train, y_train,\
+						batch, border, alpha, velocity, accumulator)
 		
 		## prediction
 		for i in range(x_train.shape[0] // batch):
 			border[0] = i * batch
 			border[1] = (i + 1) * batch
-			set_forward_propagation(z, x, weight, arch, f_act, x_train, border)
+			forward_propagation(z, x, weight, arch, f_act, x_train, border)
 			z_epoch[border[0] : border[1], :] = z[-1]
 		
 		if x_train.shape[0] % batch:
@@ -157,7 +140,7 @@ def learn_mp(x_train, y_train, arch, f_act, epochs, alpha, batch, start_velocity
 			for i in range(x_valid.shape[0] // batch):
 				border[0] = i * batch
 				border[1] = (i + 1) * batch
-				set_forward_propagation(z, x, weight, arch, f_act, x_valid, border)
+				forward_propagation(z, x, weight, arch, f_act, x_valid, border)
 				z_epoch[border[0] : border[1], :] = z[-1]
 			
 			if x_valid.shape[0] % batch:
