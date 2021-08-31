@@ -30,13 +30,13 @@ def relu_derivative(target):
 	return deriv
 
 
+# def softmax(target):
+# 	target = np.exp(target)
+# 	softmax = target / np.sum(target)
+# 	return softmax
+
+
 def softmax(target):
-	target = np.exp(target)
-	softmax = target / np.sum(target)
-	return softmax
-
-
-def softmax_batch(target):
 	target = np.exp(target)
 	softmax = target / np.sum(target, axis=1, keepdims=True)
 	return softmax

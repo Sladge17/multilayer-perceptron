@@ -2,6 +2,26 @@ import numpy as np
 from mp_learn.funcs import *
 # from funcs import *
 
+def train_mp(x_train, y_train, arch, f_act, epochs, alpha, batch, start_velocity):
+	x_train, y_train, x_valid, y_valid = init_datasets(x_train, y_train)
+	z, x, weight, dx, dw = init_arch(arch, batch)
+	border = np.zeros(2, np.int32)
+	velocity, accumulator = init_optimizer(start_velocity, dw)
+	error, accuracy, z_epoch = init_metrics(epochs, y_train)
+	xy_train = np.zeros_like(np.concatenate((x_train, y_train), axis=1))
+	for epoch in range(epochs):
+		train_trainds(z, x, weight, dx, dw, arch, f_act, x_train, y_train,\
+						batch, border, alpha, velocity, accumulator)
+		predict_testds(z, x, weight, arch, f_act, x_train,\
+						border, batch, z_epoch)
+		error[0, epoch], accuracy[0, epoch] = fill_metrics(z_epoch, y_train)
+		shuffle_dataset(x_train, y_train, xy_train)
+		predict_validds(z, x, weight, arch, f_act, x_valid,\
+						border, batch, z_epoch)
+		error[1, epoch], accuracy[1, epoch] =\
+			fill_metrics(z_epoch[border[0] : border[1]], y_valid)
+	return weight, error, accuracy
+
 def init_datasets(x_train, y_train):
 	border = int(x_train.shape[0] * 0.9)
 	y_valid = y_train[border:]
@@ -55,7 +75,7 @@ def forward_propagation(z, x, weight, arch, f_act, x_train, border):
 	for j in range(1, arch.size - 1):
 		x[j - 1][:, :] = z[j - 1] @ weight[j - 1]
 		z[j][:, :-1] = f[f_act](x[j - 1])
-	z[-1][:, :] = softmax_batch(z[-2] @ weight[-1])
+	z[-1][:, :] = softmax(z[-2] @ weight[-1])
 
 def back_propagation(z, x, weight, dx, dw, arch, f_act, y_train, border):
 	dx[-1][:, :] = z[-1] - y_train[border[0] : border[1]]
@@ -70,21 +90,31 @@ def update_weight_adam(weight, dw, alpha, velocity, accumulator):
 		accumulator[j][:, :] = 0.9 * accumulator[j] + (1 - 0.9) * (dw[j] ** 2)
 		weight[j][:, :] -= velocity[j] * (alpha / np.sqrt(accumulator[j]))
 
+def predict_testds(z, x, weight, arch, f_act, x_train, border, batch, z_epoch):
+	for i in range(x_train.shape[0] // batch):
+		border[0] = i * batch
+		border[1] = (i + 1) * batch
+		forward_propagation(z, x, weight, arch, f_act, x_train, border)
+		z_epoch[border[0] : border[1], :] = z[-1]
+	if x_train.shape[0] % batch:
+		border[0] = border[1]
+		border[1] = x_train.shape[0] - border[0]
+		forward_propagation_tail(z, x, weight, arch, f_act, x_train, border)
+		z_epoch[border[0] :, :] = z[-1][: border[1]]
 
-
-
-
-
-
-
-def set_forward_propagation_tail(z, x, weight, arch, f_act, x_train, border):
+def forward_propagation_tail(z, x, weight, arch, f_act, x_train, border):
 	z[0][: border[1], :-1] = x_train[border[0] :]
 	for j in range(1, arch.size - 1):
 		x[j - 1][: border[1], :] = z[j - 1][: border[1]] @ weight[j - 1]
 		z[j][: border[1], :-1] = f[f_act](x[j - 1][: border[1]])
-	z[-1][: border[1], :] = softmax_batch(z[-2][: border[1]] @ weight[-1])
+	z[-1][: border[1], :] = softmax(z[-2][: border[1]] @ weight[-1])
 
-def cross_entropy_batch(z, y):
+def fill_metrics(z_epoch, y):
+	error = np.sum(cross_entropy(z_epoch, y))
+	accuracy = get_accuracy(z_epoch, y)
+	return error, accuracy
+
+def cross_entropy(z, y):
 	cross_entropy = -np.log([z[i, np.argmax(y[i])] for i in range(z.shape[0])])
 	return cross_entropy
 
@@ -96,66 +126,26 @@ def get_accuracy(z_epoch, y_train):
 	accuracy = accuracy / z_epoch.shape[0] * 100
 	return accuracy
 
-def set_shuffle(x_train, y_train, xy_train):
+def shuffle_dataset(x_train, y_train, xy_train):
 	xy_train[:, :] = np.concatenate((x_train, y_train), axis=1)
 	np.random.shuffle(xy_train)
 	x_train[:, :] = xy_train[:, :-2]
 	y_train[:, :] = xy_train[:, -2:]
 
-
-
-
-
-def learn_mp(x_train, y_train, arch, f_act, epochs, alpha, batch, start_velocity):
-	x_train, y_train, x_valid, y_valid = init_datasets(x_train, y_train)
-	z, x, weight, dx, dw = init_arch(arch, batch)
-	border = np.zeros(2, np.int32)
-	velocity, accumulator = init_optimizer(start_velocity, dw)
-	error, accuracy, z_epoch = init_metrics(epochs, y_train)
-	xy_train = np.zeros_like(np.concatenate((x_train, y_train), axis=1))
-
-	for epoch in range(epochs):
-		train_trainds(z, x, weight, dx, dw, arch, f_act, x_train, y_train,\
-						batch, border, alpha, velocity, accumulator)
-		
-		## prediction
-		for i in range(x_train.shape[0] // batch):
+def predict_validds(z, x, weight, arch, f_act, x_valid, border, batch, z_epoch):
+	if x_valid.shape[0] // batch:
+		for i in range(x_valid.shape[0] // batch):
 			border[0] = i * batch
 			border[1] = (i + 1) * batch
-			forward_propagation(z, x, weight, arch, f_act, x_train, border)
+			forward_propagation(z, x, weight, arch, f_act, x_valid, border)
 			z_epoch[border[0] : border[1], :] = z[-1]
-		
-		if x_train.shape[0] % batch:
+		if x_valid.shape[0] % batch:
 			border[0] = border[1]
-			border[1] = x_train.shape[0] - border[0]
-			set_forward_propagation_tail(z, x, weight, arch, f_act, x_train, border)
+			border[1] = x_valid.shape[0] - border[0]
+			forward_propagation_tail(z, x, weight, arch, f_act, x_valid, border)
 			z_epoch[border[0] :, :] = z[-1][: border[1]]
-		
-		error[0, epoch] = np.sum(cross_entropy_batch(z_epoch, y_train))
-		accuracy[0, epoch] = get_accuracy(z_epoch, y_train)
-
-		set_shuffle(x_train, y_train, xy_train)
-
-		if x_valid.shape[0] // batch:
-			for i in range(x_valid.shape[0] // batch):
-				border[0] = i * batch
-				border[1] = (i + 1) * batch
-				forward_propagation(z, x, weight, arch, f_act, x_valid, border)
-				z_epoch[border[0] : border[1], :] = z[-1]
-			
-			if x_valid.shape[0] % batch:
-				border[0] = border[1]
-				border[1] = x_valid.shape[0] - border[0]
-				set_forward_propagation_tail(z, x, weight, arch, f_act, x_valid, border)
-				z_epoch[border[0] :, :] = z[-1][: border[1]]
-		else:
-			border[0] = 0
-			border[1] = x_valid.shape[0]
-			set_forward_propagation_tail(z, x, weight, arch, f_act, x_valid, border)
-			z_epoch[: border[1], :] = z[-1][: border[1]]
-
-		
-		error[1, epoch] = np.sum(cross_entropy_batch(z_epoch[border[0] : border[1]], y_valid))
-		accuracy[1, epoch] = get_accuracy(z_epoch[border[0] : border[1]], y_valid)
-	
-	return weight, error, accuracy
+		return
+	border[0] = 0
+	border[1] = x_valid.shape[0]
+	forward_propagation_tail(z, x, weight, arch, f_act, x_valid, border)
+	z_epoch[: border[1], :] = z[-1][: border[1]]

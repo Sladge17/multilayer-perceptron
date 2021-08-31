@@ -19,7 +19,7 @@ def set_forward_propagation(z, x, weight, arch, f_act, x_test):
 		z[j][:, :-1] = f[f_act](x[j - 1])
 	# z[-1][:, :] = softmax_batch(z[-2] @ weight[-1])
 	z[-1][:, :] = z[-2] @ weight[-1]
-	z[-1][:, :] = softmax_batch(z[-1])
+	z[-1][:, :] = softmax(z[-1])
 
 
 
