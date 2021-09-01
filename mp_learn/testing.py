@@ -2,7 +2,12 @@ import numpy as np
 from mp_learn.funcs import *
 # from funcs import *
 
-def predict_mp(x_test, arch, f_act, weight):
+def test_mp(x_test, y_test, arch, f_act, weight):
+	predict = predict_test(x_test, weight, arch, f_act)
+	accuracy = get_accuracy(predict, y_test)
+	return accuracy
+
+def predict_test(x_test, weight, arch, f_act):
 	z, x = init_arch(arch, x_test.shape[0])
 	forward_propagation(z, x, weight, arch, f_act, x_test)
 	return z[-1]
@@ -24,3 +29,11 @@ def forward_propagation(z, x, weight, arch, f_act, x_test):
 		z[j][:, :-1] = f[f_act](x[j - 1])
 	z[-1][:, :] = z[-2] @ weight[-1]
 	z[-1][:, :] = softmax(z[-1])
+
+def get_accuracy(predict, target):
+	accuracy = 0
+	for i in range(predict.shape[0]):
+		if np.argmax(predict[i]) == np.argmax(target[i]):
+			accuracy += 1
+	accuracy = accuracy / predict.shape[0] * 100
+	return accuracy
