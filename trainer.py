@@ -18,44 +18,40 @@ def main(argv):
 	x_train, y_train = prepare_data(x_train, x_train_mean, x_train_std, y_train)
 	x_test, y_test = prepare_data(x_test, x_train_mean, x_train_std, y_test)
 	
-	# border = int(x_train.shape[0] * 0.9)
-	# MP.y_valid = y_train[border:]
-	# MP.x_valid = x_train[border:]
-	# MP.y_train = y_train[:border]
-	# MP.x_train = x_train[:border]
-	
-	
-	# MP.init_MP(x_train, y_train,
-	# 			settings.arch,
-	# 			settings.f_act,
-	# 			settings.epochs,
-	# 			settings.alpha,
-	# 			settings.batch,
-	# 			settings.start_velocity)
-
-	
-	# accuracy_test = 0
-	# while accuracy_test < settings.target_accuracy:
-	# 	MP.reinit_weight()
-	# 	MP.learning()
-	
-# 	MP.reinit_weight()
-# 	MP.learning()
-
-# # def plot_stats(error_train, accuracy_train):
-# 	plt.figure(figsize=(18, 10))
-# 	plt.plot(range(settings.epochs), MP.error[0], label='error train')
-# 	plt.plot(range(settings.epochs), MP.accuracy[0], label='accuracy train')
-# 	# plt.plot(range(settings.epochs), error_train[1], label='error valid', linestyle='--')
-# 	# plt.plot(range(settings.epochs), accuracy_train[1], label='accuracy train', linestyle='--')
-# 	plt.title('Learning progress')
-# 	plt.xlabel('epochs')
-# 	plt.ylabel('error / accuracy')
-# 	plt.legend(loc='upper right')
-# 	plt.grid()
-# 	plt.show()
+	MP.init_MP(x_train, y_train,
+				settings.arch,
+				settings.f_act,
+				settings.epochs,
+				settings.alpha,
+				settings.batch,
+				settings.start_velocity)
 
 
+	MP.reinit_weight()
+	MP.learning()
+
+	# print(MP.error[0])
+	
+	plt.figure(figsize=(18, 10))
+	plt.plot(range(settings.epochs), MP.error[0], label='error train')
+	plt.plot(range(settings.epochs), MP.accuracy[0], label='accuracy train')
+	# plt.plot(range(settings.epochs), MP.error[1], label='error valid', linestyle='--')
+	# plt.plot(range(settings.epochs), MP.accuracy[1], label='accuracy train', linestyle='--')
+	plt.title('Learning progress')
+	plt.xlabel('epochs')
+	plt.ylabel('error / accuracy')
+	plt.legend(loc='upper right')
+	plt.grid()
+	plt.show()
+	
+	exit()
+	
+	
+	
+	
+	
+	
+	
 	
 	arch = np.array([x_train.shape[1]] + settings.arch, np.int8)
 	print("Learning multilayer perceptron...")

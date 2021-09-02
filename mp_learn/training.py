@@ -114,16 +114,16 @@ def fill_metrics(z_epoch, y):
 	accuracy = get_accuracy(z_epoch, y)
 	return error, accuracy
 
-def cross_entropy(z, y):
-	cross_entropy = -np.log([z[i, np.argmax(y[i])] for i in range(z.shape[0])])
+def cross_entropy(z_epoch, y):
+	cross_entropy = -np.log([z_epoch[i, np.argmax(y[i])] for i in range(z_epoch.shape[0])])
 	return cross_entropy
 
-def get_accuracy(z, y):
+def get_accuracy(z_epoch, y):
 	accuracy = 0
-	for i in range(z.shape[0]):
-		if np.argmax(z[i]) == np.argmax(y[i]):
+	for i in range(z_epoch.shape[0]):
+		if np.argmax(z_epoch[i]) == np.argmax(y[i]):
 			accuracy += 1
-	accuracy = accuracy / z.shape[0] * 100
+	accuracy = accuracy / z_epoch.shape[0] * 100
 	return accuracy
 
 def shuffle_dataset(x_train, y_train, xy_train):

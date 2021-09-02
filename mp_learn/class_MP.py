@@ -24,7 +24,7 @@ class MP:
 		MP.init_optimizer(start_velocity, MP.weight)
 		MP.init_metrics(MP.epochs, MP.y_train)
 		MP.xy_train = np.zeros_like(np.concatenate((MP.x_train, MP.y_train),
-												axis=1))
+													axis=1))
 
 	@staticmethod
 	def init_datasets(x_train, y_train):
@@ -46,7 +46,7 @@ class MP:
 			if i < arch.size - 2:
 				MP.x[i] = np.zeros([batch, arch[i + 1]], np.float32)
 				MP.dx[i] = np.zeros_like(MP.x[i])
-			# weight[i] = 1 / np.sqrt(arch[i]) * np.random.rand(z[i][0].size, arch[i + 1])
+			# MP.weight[i] = 1 / np.sqrt(arch[i]) * np.random.rand(MP.z[i][0].size, arch[i + 1])
 			MP.weight[i] = np.zeros([MP.z[i][0].size, arch[i + 1]], np.float32)
 			MP.dw[i] = np.zeros_like(MP.weight[i])
 		MP.z[-1] = np.ones([batch, arch[-1]], np.float32)
@@ -67,10 +67,12 @@ class MP:
 		MP.z_epoch = np.zeros_like(y_train, np.float32)
 
 	@staticmethod
-	def reinit_weight():
+	def reinit_weight(): ## NEED FIX !!!
 		for i in range(MP.arch.size - 1):
-			MP.weight[i][:, :] = 1 / np.sqrt(MP.arch[i]) *\
+			MP.weight[i] = 1 / np.sqrt(MP.arch[i]) *\
 								np.random.rand(MP.z[i][0].size, MP.arch[i + 1])
+			# MP.weight[i][:, :] = 1 / np.sqrt(MP.arch[i]) *\
+			# 					np.random.rand(MP.z[i][0].size, MP.arch[i + 1])
 
 	@staticmethod
 	def learning():
@@ -79,13 +81,13 @@ class MP:
 			MP.prediction(MP.x_train)
 			MP.error[0, epoch] = np.sum(MP.cross_entropy(MP.y_train))
 			MP.accuracy[0, epoch] = MP.get_accuracy(MP.y_train)
-			MP.shuffle_dataset()
+			MP.shuffle_trainds()
 
 	@staticmethod
 	def training():
 		for i in range(MP.x_train.shape[0] // MP.batch):
-			MP.border[0] = i * MP.batch
-			MP.border[1] = (i + 1) * MP.batch
+			MP.border[0] = i * MP.batch ## <- try optimize
+			MP.border[1] = (i + 1) * MP.batch ## <- try optimize
 			MP.forward_propagation(MP.x_train)
 			MP.back_propagation()
 			MP.update_weight_adam()
@@ -113,28 +115,22 @@ class MP:
 			MP.velocity[j][:, :] = 0.9 * MP.velocity[j] +\
 									(1 - 0.9) * MP.dw[j]
 			MP.accumulator[j][:, :] = 0.9 * MP.accumulator[j] +\
-									(1 - 0.9) * (MP.dw[j] ** 2)
+										(1 - 0.9) * (MP.dw[j] ** 2)
 			MP.weight[j][:, :] -= MP.velocity[j] *\
-								(MP.alpha / np.sqrt(MP.accumulator[j]))
+									(MP.alpha / np.sqrt(MP.accumulator[j]))
 
 	@staticmethod
 	def prediction(x_dataset):
-		if x_dataset.shape[0] // MP.batch:
-			for i in range(x_dataset.shape[0] // MP.batch):
-				MP.border[0] = i * MP.batch
-				MP.border[1] = (i + 1) * MP.batch
-				MP.forward_propagation(x_dataset)
-				MP.z_epoch[MP.border[0] : MP.border[1], :] = MP.z[-1]
-			if x_dataset.shape[0] % MP.batch:
-				MP.border[0] = MP.border[1]
-				MP.border[1] = x_dataset.shape[0] - MP.border[0]
-				MP.forward_propagation_tail(x_dataset)
-				MP.z_epoch[MP.border[0] :, :] = MP.z[-1][: MP.border[1]]
-			return
-		MP.border[0] = 0
-		MP.border[1] = x_dataset.shape[0]
-		MP.forward_propagation_tail(x_dataset)
-		MP.z_epoch[: MP.border[1], :] = MP.z[-1][: MP.border[1]]
+		for i in range(x_dataset.shape[0] // MP.batch):
+			MP.border[0] = i * MP.batch
+			MP.border[1] = (i + 1) * MP.batch
+			MP.forward_propagation(x_dataset)
+			MP.z_epoch[MP.border[0] : MP.border[1], :] = MP.z[-1]
+		if x_dataset.shape[0] % MP.batch:
+			MP.border[0] = MP.border[1]
+			MP.border[1] = x_dataset.shape[0] - MP.border[0]
+			MP.forward_propagation_tail(x_dataset)
+			MP.z_epoch[MP.border[0] :, :] = MP.z[-1][: MP.border[1]]
 
 	@staticmethod
 	def forward_propagation_tail(x_dataset):
@@ -162,8 +158,10 @@ class MP:
 		return accuracy
 
 	@staticmethod
-	def shuffle_dataset():
+	def shuffle_trainds():
 		MP.xy_train[:, :] = np.concatenate((MP.x_train, MP.y_train), axis=1)
 		np.random.shuffle(MP.xy_train)
 		MP.x_train[:, :] = MP.xy_train[:, :-2]
 		MP.y_train[:, :] = MP.xy_train[:, -2:]
+
+
