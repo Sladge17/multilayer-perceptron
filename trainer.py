@@ -18,6 +18,9 @@ def main(argv):
 	x_train, y_train = prepare_data(x_train, x_train_mean, x_train_std, y_train)
 	x_test, y_test = prepare_data(x_test, x_train_mean, x_train_std, y_test)
 	
+	# print(x_test.shape)
+	# exit()
+	
 	MP.init_MP(x_train, y_train,
 				settings.arch,
 				settings.f_act,
@@ -29,14 +32,15 @@ def main(argv):
 
 	MP.reinit_weight()
 	MP.learning()
-
-	# print(MP.error[0])
+	MP.prediction(x_test)
+	test_accuracy = MP.get_accuracy(MP.z_epoch[: x_test.shape[0]], y_test)
+	print(test_accuracy)
 	
 	plt.figure(figsize=(18, 10))
 	plt.plot(range(settings.epochs), MP.error[0], label='error train')
 	plt.plot(range(settings.epochs), MP.accuracy[0], label='accuracy train')
-	# plt.plot(range(settings.epochs), MP.error[1], label='error valid', linestyle='--')
-	# plt.plot(range(settings.epochs), MP.accuracy[1], label='accuracy train', linestyle='--')
+	plt.plot(range(settings.epochs), MP.error[1], label='error valid', linestyle='--')
+	plt.plot(range(settings.epochs), MP.accuracy[1], label='accuracy train', linestyle='--')
 	plt.title('Learning progress')
 	plt.xlabel('epochs')
 	plt.ylabel('error / accuracy')

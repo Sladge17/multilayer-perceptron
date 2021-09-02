@@ -26,7 +26,8 @@ def relu_derivative(target):
 
 def softmax(target):
 	target = np.exp(target)
-	softmax = target / np.sum(target, axis=1, keepdims=True)
+	softmax = (target / np.sum(target, axis=1, keepdims=True))\
+		.astype(np.float32)
 	return softmax
 
 f = {"sigmoid" : sigmoid,
