@@ -65,10 +65,10 @@ def train_trainds(z, x, weight, dx, dw, arch, f_act, x_train, y_train,\
 					batch, border, alpha, velocity, accumulator):
 	for i in range(x_train.shape[0] // batch):
 		border[0] = i * batch
-	border[1] = (i + 1) * batch
-	forward_propagation(z, x, weight, arch, f_act, x_train, border)
-	back_propagation(z, x, weight, dx, dw, arch, f_act, y_train, border)
-	update_weight_adam(weight, dw, alpha, velocity, accumulator)
+		border[1] = (i + 1) * batch
+		forward_propagation(z, x, weight, arch, f_act, x_train, border)
+		back_propagation(z, x, weight, dx, dw, arch, f_act, y_train, border)
+		update_weight_adam(weight, dw, alpha, velocity, accumulator)
 
 def forward_propagation(z, x, weight, arch, f_act, x_train, border):
 	z[0][:, :-1] = x_train[border[0] : border[1]]
