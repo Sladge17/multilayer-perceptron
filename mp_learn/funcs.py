@@ -1,4 +1,5 @@
 import numpy as np
+np.seterr(divide='ignore', invalid='ignore')
 
 def sigmoid(target):
 	sigmoid = 1 / (1 + np.exp(-target))

@@ -10,14 +10,15 @@ class MP:
 				epochs,
 				alpha,
 				batch,
-				start_velocity):
-		# MP.y_train = y_train
-		# MP.x_train = x_train
+				start_velocity,
+				seed):
 		MP.arch = np.array([x_train.shape[1]] + arch, np.int8)
 		MP.f_act = f_act
 		MP.epochs = epochs
 		MP.alpha = alpha
 		MP.batch = batch
+		if seed > -1:
+			np.random.seed(seed)
 		MP.init_datasets(x_train, y_train)
 		MP.init_arch(MP.arch, batch)
 		MP.border = np.zeros(2, np.int32)
@@ -80,10 +81,6 @@ class MP:
 			MP.accuracy[0, epoch] = MP.get_accuracy(MP.y_train)
 			MP.shuffle_trainds()
 			MP.prediction(MP.x_valid)
-			# MP.error[1, epoch] = np.sum(MP.cross_entropy(MP.z_epoch[MP.border[0] : MP.border[1] - MP.border[0]], MP.y_valid))
-			# MP.accuracy[1, epoch] = MP.get_accuracy(MP.z_epoch[MP.border[0] : MP.border[1] - MP.border[0]], MP.y_valid)
-			# MP.error[1, epoch] = np.sum(MP.cross_entropy(MP.z_epoch[: MP.y_valid.shape[0]], MP.y_valid))
-			# MP.accuracy[1, epoch] = MP.get_accuracy(MP.z_epoch[: MP.y_valid.shape[0]], MP.y_valid)
 			MP.error[1, epoch] = np.sum(MP.cross_entropy(MP.y_valid))
 			MP.accuracy[1, epoch] = MP.get_accuracy(MP.y_valid)
 
@@ -124,18 +121,7 @@ class MP:
 									(MP.alpha / np.sqrt(MP.accumulator[j]))
 
 	@staticmethod
-	def prediction(x_dataset): ## NEED THINK !!!
-		# for i in range(x_dataset.shape[0] // MP.batch):
-		# 	MP.border[0] = i * MP.batch
-		# 	MP.border[1] = (i + 1) * MP.batch
-		# 	MP.forward_propagation(x_dataset)
-		# 	MP.z_epoch[MP.border[0] : MP.border[1], :] = MP.z[-1]
-		# if x_dataset.shape[0] % MP.batch:
-		# 	MP.border[0] = MP.border[1]
-		# 	MP.border[1] = x_dataset.shape[0] - MP.border[0]
-		# 	MP.forward_propagation_tail(x_dataset)
-		# 	MP.z_epoch[MP.border[0] :, :] = MP.z[-1][: MP.border[1]]
-
+	def prediction(x_dataset):
 		if x_dataset.shape[0] // MP.batch:
 			for i in range(x_dataset.shape[0] // MP.batch):
 				MP.border[0] = i * MP.batch
@@ -145,11 +131,7 @@ class MP:
 			if x_dataset.shape[0] % MP.batch:
 				MP.border[0] = MP.border[1]
 				MP.border[1] = x_dataset.shape[0] - MP.border[0]
-				# MP.border[1] = x_dataset.shape[0]
 				MP.forward_propagation_tail(x_dataset)
-				# MP.z_epoch[MP.border[0] :, :] = MP.z[-1][: MP.border[1]]
-				# MP.z_epoch[MP.border[0] : MP.border[0] + MP.border[1], :] =\
-				# 	MP.z[-1][: MP.border[1]]
 				MP.z_epoch[MP.border[0] : x_dataset.shape[0], :] =\
 					MP.z[-1][: MP.border[1]]
 			return
@@ -167,21 +149,6 @@ class MP:
 			MP.z[j][: MP.border[1], :-1] = f[MP.f_act](MP.x[j - 1][: MP.border[1]])
 		MP.z[-1][: MP.border[1], :] = softmax(MP.z[-2][: MP.border[1]] @\
 											MP.weight[-1])
-
-	# @staticmethod
-	# def cross_entropy(z_epoch, y_dataset):
-	# 	cross_entropy = -np.log([z_epoch[i, np.argmax(y_dataset[i])]\
-	# 							for i in range(z_epoch.shape[0])])
-	# 	return cross_entropy
-
-	# @staticmethod
-	# def get_accuracy(z_epoch, y_dataset):
-	# 	accuracy = 0
-	# 	for i in range(z_epoch.shape[0]):
-	# 		if np.argmax(z_epoch[i]) == np.argmax(y_dataset[i]):
-	# 			accuracy += 1
-	# 	accuracy = accuracy / z_epoch.shape[0] * 100
-	# 	return accuracy
 
 	@staticmethod
 	def cross_entropy(y_dataset):

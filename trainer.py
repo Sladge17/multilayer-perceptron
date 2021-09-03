@@ -1,12 +1,10 @@
 import sys
+import time
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 
 import mp_learn.settings as settings
-import mp_learn.training as training
-import mp_learn.testing as testing
-
 from mp_learn.class_MP import *
 
 def main(argv):
@@ -17,61 +15,23 @@ def main(argv):
 	x_train_mean, x_train_std = get_shiftparams(x_train)
 	x_train, y_train = prepare_data(x_train, x_train_mean, x_train_std, y_train)
 	x_test, y_test = prepare_data(x_test, x_train_mean, x_train_std, y_test)
-	
-	# print(x_test.shape)
-	# exit()
-	
 	MP.init_MP(x_train, y_train,
 				settings.arch,
 				settings.f_act,
 				settings.epochs,
 				settings.alpha,
 				settings.batch,
-				settings.start_velocity)
-
-
-	MP.reinit_weight()
-	MP.learning()
-	MP.prediction(x_test)
-	# test_accuracy = MP.get_accuracy(MP.z_epoch[: x_test.shape[0]], y_test)
-	# test_accuracy = MP.get_accuracy(MP.z_epoch[MP.border[0] : MP.border[1] - MP.border[0]], y_test)
-	# test_accuracy = MP.get_accuracy(MP.z_epoch[: y_test.shape[0]], y_test)
-	test_accuracy = MP.get_accuracy(y_test)
-	print(test_accuracy)
-	
-	plt.figure(figsize=(18, 10))
-	plt.plot(range(settings.epochs), MP.error[0], label='error train')
-	plt.plot(range(settings.epochs), MP.accuracy[0], label='accuracy train')
-	plt.plot(range(settings.epochs), MP.error[1], label='error valid', linestyle='--')
-	plt.plot(range(settings.epochs), MP.accuracy[1], label='accuracy train', linestyle='--')
-	plt.title('Learning progress')
-	plt.xlabel('epochs')
-	plt.ylabel('error / accuracy')
-	plt.legend(loc='upper right')
-	plt.grid()
-	plt.show()
-	
-	exit()
-	
-	
-	
-	
-	
-	
-	
-	
-	arch = np.array([x_train.shape[1]] + settings.arch, np.int8)
-	print("Learning multilayer perceptron...")
-	weight, error_train, accuracy_train, accuracy_test = learning_mp(x_train, y_train,
-																	x_test, y_test,
-																	arch)
-	print("\033[32mLearning done\033[37m")
+				settings.start_velocity,
+				settings.seed)
+	print("Learning multilayer perceptron...", end='\r')
+	accuracy_test = learning_mp(x_test, y_test)
+	print("\033[32mLearning multilayer perceptron done\033[37m")
 	if statkey & 0b1:
-		print_stats(error_train, accuracy_train, accuracy_test)
-	if statkey & 0b10:
-		plot_stats(error_train, accuracy_train)
-	write_dumpfile(x_train_mean, x_train_std, weight)
+		print_stats(accuracy_test)
+	write_dumpfile(x_train_mean, x_train_std, MP.weight)
 	print("\033[32mCreated dump file: dump.py\033[37m")
+	if statkey & 0b10:
+		plot_stats()	
 
 def check_argv(argv):
 	statkey = 0
@@ -125,40 +85,40 @@ def get_onehotencoding(target):
 	target = np.array(target, np.int8)
 	return target
 
-def learning_mp(x_train, y_train, x_test, y_test, arch):
+def learning_mp(x_test, y_test):
+	time_start = time.time()
 	accuracy_test = 0
 	while accuracy_test < settings.target_accuracy:
-		weight, error_train, accuracy_train = training.train_mp(x_train, y_train,
-																arch,
-																settings.f_act,
-																settings.epochs,
-																settings.alpha,
-																settings.batch,
-																settings.start_velocity)
-		accuracy_test = testing.test_mp(x_test, y_test, arch, settings.f_act, weight)
-	return weight, error_train, accuracy_train, accuracy_test
+		MP.reinit_weight()
+		MP.learning()
+		MP.prediction(x_test)
+		accuracy_test = MP.get_accuracy(y_test)
+		if time.time() - time_start > 10:
+			print("\033[31mСalculation error, try again\033[37m")
+			exit()
+	return accuracy_test
 
-def plot_stats(error_train, accuracy_train):
+def print_stats(accuracy_test):
+	print("Statistic:")
+	print(f"\tNumber of epochs: {MP.epochs}")
+	print(f"\tLast train error: {round(float(MP.error[0, -1]), 3)}")
+	print(f"\tLast valid error: {round(float(MP.error[1, -1]), 3)}")
+	print(f"\tLast train accuracy: {round(float(MP.accuracy[0, -1]), 3)}%")
+	print(f"\tLast valid accuracy: {round(float(MP.accuracy[1, -1]), 3)}%")
+	print(f"\033[33m\tTest accuracy: {round(accuracy_test, 3)}%\033[37m")
+
+def plot_stats():
 	plt.figure(figsize=(18, 10))
-	plt.plot(range(settings.epochs), error_train[0], label='error train')
-	plt.plot(range(settings.epochs), accuracy_train[0], label='accuracy train')
-	plt.plot(range(settings.epochs), error_train[1], label='error valid', linestyle='--')
-	plt.plot(range(settings.epochs), accuracy_train[1], label='accuracy train', linestyle='--')
+	plt.plot(range(settings.epochs), MP.error[0], label='error train')
+	plt.plot(range(settings.epochs), MP.accuracy[0], label='accuracy train')
+	plt.plot(range(settings.epochs), MP.error[1], label='error valid', linestyle='--')
+	plt.plot(range(settings.epochs), MP.accuracy[1], label='accuracy train', linestyle='--')
 	plt.title('Learning progress')
 	plt.xlabel('epochs')
 	plt.ylabel('error / accuracy')
 	plt.legend(loc='upper right')
 	plt.grid()
 	plt.show()
-
-def print_stats(error_train, accuracy_train, accuracy_test):
-	print("Statistic:")
-	print(f"\tNumber of epochs: {settings.epochs}")
-	print(f"\tLast train error: {round(float(error_train[0, -1]), 3)}")
-	print(f"\tLast valid error: {round(float(error_train[1, -1]), 3)}")
-	print(f"\tLast train accuracy: {round(float(accuracy_train[0, -1]), 3)}%")
-	print(f"\tLast valid accuracy: {round(float(accuracy_train[1, -1]), 3)}%")
-	print(f"\033[33m\tTest accuracy: {round(accuracy_test, 3)}%\033[37m")
 
 def write_dumpfile(x_train_mean, x_train_std, weight):
 	with open("dump.py", 'w') as file:

@@ -11,3 +11,4 @@ alpha = 0.01
 batch = 100
 start_velocity = 0.8
 target_accuracy = 95
+seed = 0
