@@ -1,7 +1,5 @@
 import sys
 import time
-import numpy as np
-import pandas as pd ## <-- maybe need del
 import matplotlib.pyplot as plt
 
 import mp_learn.settings as settings
@@ -10,17 +8,9 @@ from mp_learn.class_Dataset import *
 
 def main(argv):
 	statkey = check_argv(argv)
-	# df_train, df_test = get_datasets()
-	# x_train, y_train = separate_dataset(df_train)
-	# x_test, y_test = separate_dataset(df_test)
-	# x_train_mean, x_train_std = get_shiftparams(x_train)
-	# x_train, y_train = prepare_data(x_train, x_train_mean, x_train_std, y_train)
-	# x_test, y_test = prepare_data(x_test, x_train_mean, x_train_std, y_test)
-
 	Dataset.init_Dataset(settings.dataset,
 						settings.percent_test,
 						settings.features)
-
 	MP.init_MP(Dataset.x_train, Dataset.y_train,
 				settings.arch,
 				settings.f_act,
@@ -34,7 +24,7 @@ def main(argv):
 	print("\033[32mLearning multilayer perceptron done\033[37m")
 	if statkey & 0b1:
 		print_stats(accuracy_test)
-	write_dumpfile(Dataset.mean, Dataset.std, MP.weight)
+	write_dumpfile()
 	print("\033[32mCreated dump file: dump.py\033[37m")
 	if statkey & 0b10:
 		plot_stats()	
@@ -55,41 +45,6 @@ def check_argv(argv):
 			statkey |= 0b10
 			continue
 	return statkey
-
-def get_datasets():
-	try:
-		df = pd.read_csv(settings.dataset, header=None)
-	except:
-		print("\033[31mDataset not exist\033[37m")
-		exit()
-	border_test = int(df.shape[0] * (100 - settings.percent_test) * 0.01)
-	df_train = df.iloc[:border_test]
-	df_test = df.iloc[border_test:]
-	return df_train, df_test
-
-def separate_dataset(df_dataset):
-	x_dataset = df_dataset[settings.features]
-	y_dataset = df_dataset[1]
-	return x_dataset, y_dataset
-
-def get_shiftparams(x_train):
-	x_train_mean = x_train.describe().T['mean']
-	x_train_std = x_train.describe().T['std']
-	return x_train_mean, x_train_std
-
-def prepare_data(features, x_train_mean, x_train_std, target):
-	features = shift_features(features, x_train_mean, x_train_std).values
-	target = get_onehotencoding(target)
-	return features, target
-
-def shift_features(features, x_train_mean, x_train_std):
-	features = (features - x_train_mean) / x_train_std
-	return features
-
-def get_onehotencoding(target):
-	target = list(map(lambda x: [1, 0] if x == 'M' else [0, 1], target))
-	target = np.array(target, np.int8)
-	return target
 
 def learning_mp(x_test, y_test):
 	time_start = time.time()
@@ -126,16 +81,16 @@ def plot_stats():
 	plt.grid()
 	plt.show()
 
-def write_dumpfile(x_train_mean, x_train_std, weight):
+def write_dumpfile():
 	with open("dump.py", 'w') as file:
 		file.write(f"features = {settings.features}\n")
 		file.write(f"arch = {settings.arch}\n")
 		file.write(f"f_act = \"{settings.f_act}\"\n")
-		file.write(f"x_train_mean = {x_train_mean.tolist()}\n")
-		file.write(f"x_train_std = {x_train_std.tolist()}\n")
-		file.write(f"weight = [0] * {len(weight)}\n")
-		for i in range(len(weight)):
-			file.write(f"weight[{i}] = {weight[i].tolist()}\n")
+		file.write(f"x_train_mean = {Dataset.mean.tolist()}\n")
+		file.write(f"x_train_std = {Dataset.std.tolist()}\n")
+		file.write(f"weight = [0] * {len(MP.weight)}\n")
+		for i in range(len(MP.weight)):
+			file.write(f"weight[{i}] = {MP.weight[i].tolist()}\n")
 
 if __name__ == "__main__":
 	main(sys.argv[1:])
