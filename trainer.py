@@ -33,7 +33,10 @@ def main(argv):
 	MP.reinit_weight()
 	MP.learning()
 	MP.prediction(x_test)
-	test_accuracy = MP.get_accuracy(MP.z_epoch[: x_test.shape[0]], y_test)
+	# test_accuracy = MP.get_accuracy(MP.z_epoch[: x_test.shape[0]], y_test)
+	# test_accuracy = MP.get_accuracy(MP.z_epoch[MP.border[0] : MP.border[1] - MP.border[0]], y_test)
+	# test_accuracy = MP.get_accuracy(MP.z_epoch[: y_test.shape[0]], y_test)
+	test_accuracy = MP.get_accuracy(y_test)
 	print(test_accuracy)
 	
 	plt.figure(figsize=(18, 10))
