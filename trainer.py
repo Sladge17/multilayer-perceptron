@@ -1,21 +1,27 @@
 import sys
 import time
 import numpy as np
-import pandas as pd
+import pandas as pd ## <-- maybe need del
 import matplotlib.pyplot as plt
 
 import mp_learn.settings as settings
 from mp_learn.class_MP import *
+from mp_learn.class_Dataset import *
 
 def main(argv):
 	statkey = check_argv(argv)
-	df_train, df_test = get_datasets()
-	x_train, y_train = separate_dataset(df_train)
-	x_test, y_test = separate_dataset(df_test)
-	x_train_mean, x_train_std = get_shiftparams(x_train)
-	x_train, y_train = prepare_data(x_train, x_train_mean, x_train_std, y_train)
-	x_test, y_test = prepare_data(x_test, x_train_mean, x_train_std, y_test)
-	MP.init_MP(x_train, y_train,
+	# df_train, df_test = get_datasets()
+	# x_train, y_train = separate_dataset(df_train)
+	# x_test, y_test = separate_dataset(df_test)
+	# x_train_mean, x_train_std = get_shiftparams(x_train)
+	# x_train, y_train = prepare_data(x_train, x_train_mean, x_train_std, y_train)
+	# x_test, y_test = prepare_data(x_test, x_train_mean, x_train_std, y_test)
+
+	Dataset.init_Dataset(settings.dataset,
+						settings.percent_test,
+						settings.features)
+
+	MP.init_MP(Dataset.x_train, Dataset.y_train,
 				settings.arch,
 				settings.f_act,
 				settings.epochs,
@@ -24,11 +30,11 @@ def main(argv):
 				settings.start_velocity,
 				settings.seed)
 	print("Learning multilayer perceptron...", end='\r')
-	accuracy_test = learning_mp(x_test, y_test)
+	accuracy_test = learning_mp(Dataset.x_test, Dataset.y_test)
 	print("\033[32mLearning multilayer perceptron done\033[37m")
 	if statkey & 0b1:
 		print_stats(accuracy_test)
-	write_dumpfile(x_train_mean, x_train_std, MP.weight)
+	write_dumpfile(Dataset.mean, Dataset.std, MP.weight)
 	print("\033[32mCreated dump file: dump.py\033[37m")
 	if statkey & 0b10:
 		plot_stats()	
