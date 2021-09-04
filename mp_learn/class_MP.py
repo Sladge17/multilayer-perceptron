@@ -20,10 +20,10 @@ class MP:
 		if seed > -1:
 			np.random.seed(seed)
 		MP.init_datasets(x_train, y_train)
-		MP.init_arch(MP.arch, batch)
+		MP.init_arch()
 		MP.border = np.zeros(2, np.int32)
-		MP.init_optimizer(start_velocity, MP.weight)
-		MP.init_metrics(MP.epochs, MP.y_train)
+		MP.init_optimizer(start_velocity)
+		MP.init_metrics()
 		MP.xy_train = np.zeros_like(np.concatenate((MP.x_train, MP.y_train),
 													axis=1))
 
@@ -36,35 +36,37 @@ class MP:
 		MP.x_train = x_train[:border]
 
 	@staticmethod
-	def init_arch(arch, batch):
-		MP.z = [0] * arch.size
-		MP.x = [0] * (arch.size - 2)
-		MP.dx = [0] * (arch.size - 1)
-		MP.weight = [0] * (arch.size - 1)
-		MP.dw = [0] * (arch.size - 1)
-		for i in range(arch.size - 1):
-			MP.z[i] = np.ones([batch, arch[i] + 1], np.float32)
-			if i < arch.size - 2:
-				MP.x[i] = np.zeros([batch, arch[i + 1]], np.float32)
+	def init_arch():
+		MP.z = [0] * MP.arch.size
+		MP.x = [0] * (MP.arch.size - 2)
+		MP.dx = [0] * (MP.arch.size - 1)
+		MP.weight = [0] * (MP.arch.size - 1)
+		MP.dw = [0] * (MP.arch.size - 1)
+		for i in range(MP.arch.size - 1):
+			MP.z[i] = np.ones([MP.batch, MP.arch[i] + 1], np.float32)
+			if i < MP.arch.size - 2:
+				MP.x[i] = np.zeros([MP.batch, MP.arch[i + 1]], np.float32)
 				MP.dx[i] = np.zeros_like(MP.x[i])
-			MP.weight[i] = np.zeros([MP.z[i][0].size, arch[i + 1]], np.float64)
+			MP.weight[i] = np.zeros([MP.z[i][0].size, MP.arch[i + 1]],
+									np.float64)
 			MP.dw[i] = np.zeros_like(MP.weight[i])
-		MP.z[-1] = np.ones([batch, arch[-1]], np.float32)
+		MP.z[-1] = np.ones([MP.batch, MP.arch[-1]], np.float32)
 		MP.dx[-1] = np.zeros_like(MP.z[-1])
 
 	@staticmethod
-	def init_optimizer(start_velocity, weight):
-		MP.velocity = [0] * len(weight)
-		MP.accumulator = [0] * len(weight)
-		for i in range(len(weight)):
-			MP.velocity[i] = np.full(weight[i].shape, start_velocity, np.float32)
-			MP.accumulator[i] = np.zeros(weight[i].shape, np.float32)
+	def init_optimizer(start_velocity):
+		MP.velocity = [0] * len(MP.weight)
+		MP.accumulator = [0] * len(MP.weight)
+		for i in range(len(MP.weight)):
+			MP.velocity[i] = np.full(MP.weight[i].shape, start_velocity,
+									np.float32)
+			MP.accumulator[i] = np.zeros(MP.weight[i].shape, np.float32)
 
 	@staticmethod
-	def init_metrics(epochs, y_train):
-		MP.error = np.zeros([2, epochs], np.float32)
-		MP.accuracy = np.zeros([2, epochs], np.float32)
-		MP.z_epoch = np.zeros_like(y_train, np.float32)
+	def init_metrics():
+		MP.error = np.zeros([2, MP.epochs], np.float32)
+		MP.accuracy = np.zeros([2, MP.epochs], np.float32)
+		MP.z_epoch = np.zeros_like(MP.y_train, np.float32)
 
 	@staticmethod
 	def reinit_weight():

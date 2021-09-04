@@ -10,8 +10,8 @@ class DS:
 		x_test, y_test = DS.split_dataset(df_test, features)
 		DS.mean = x_train.describe().T['mean']
 		DS.std = x_train.describe().T['std']
-		DS.x_train, DS.y_train = DS.prepare_data(x_train, y_train)
-		DS.x_test, DS.y_test = DS.prepare_data(x_test, y_test)
+		DS.x_train, DS.y_train = DS.extract_data(x_train, y_train)
+		DS.x_test, DS.y_test = DS.extract_data(x_test, y_test)
 
 	@staticmethod
 	def get_datasets(dataset, percent_test):
@@ -32,7 +32,7 @@ class DS:
 		return x_dataset, y_dataset
 
 	@staticmethod
-	def prepare_data(x, y):
+	def extract_data(x, y):
 		x = ((x - DS.mean) / DS.std).values
 		y = np.array(list(map(lambda i: [1, 0] if i == 'M' else [0, 1], y)),
 						np.int8)
