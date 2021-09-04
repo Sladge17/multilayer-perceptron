@@ -52,5 +52,5 @@ class MPexe:
 		for i in range(MPexe.predict.size):
 			if MPexe.predict[i] == y_exe[i]:
 				accuracy += 1
-		accuracy = round(accuracy / MPexe.predict.size * 100, 3)
+		accuracy = accuracy / MPexe.predict.size * 100
 		return accuracy

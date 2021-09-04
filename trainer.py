@@ -81,11 +81,11 @@ def write_report():
 		file.write("Epoch\tError train\t\tError test\t\tAccur train\t\tAccur test\n")
 		file.write(f"{'=' * 66}\n")
 		for i in range(MP.epochs):
-			file.write(f"{i + 1}\t\t\
-{round(MP.error[0, i].astype(float), 3)}\t\t\t\
-{round(MP.error[1, i].astype(float), 3)}\t\t\t\
-{round(MP.accuracy[0, i].astype(float), 3)}\t\t\t\
-{round(MP.accuracy[1, i].astype(float), 3)}\n")
+			file.write(f"{i + 1:5}\t\
+{round(MP.error[0, i].astype(float), 2):11}\t\t\
+{round(MP.error[1, i].astype(float), 2):10}\t\t\
+{round(MP.accuracy[0, i].astype(float), 2):10}%\t\t\
+{round(MP.accuracy[1, i].astype(float), 2):9}%\n")
 
 def draw_graph():
 	plt.figure(figsize=(18, 10))

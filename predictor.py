@@ -31,7 +31,7 @@ def main(argv):
 	MPexe.prediction()
 	if statkey:
 		accuracy = MPexe.get_accuracy(DSexe.get_y_exe(argv[0]))
-		print(f"Prediction accuracy: {accuracy}%")
+		print(f"Prediction accuracy: {round(accuracy, 2)}%")
 	file_name = write_prediction()
 	print(f"\033[32mCreated prediction file: {file_name}\033[37m")
 
