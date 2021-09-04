@@ -3,15 +3,15 @@ import time
 import matplotlib.pyplot as plt
 
 import mp_learn.settings as settings
-from mp_learn.class_Dataset import *
+from mp_learn.class_DS import *
 from mp_learn.class_MP import *
 
 def main(argv):
 	statkey = check_argv(argv)
-	Dataset.init_Dataset(settings.dataset,
-						settings.features,
-						settings.percent_test)
-	MP.init_MP(Dataset.x_train, Dataset.y_train,
+	DS.init_DS(settings.dataset,
+				settings.features,
+				settings.percent_test)
+	MP.init_MP(DS.x_train, DS.y_train,
 				settings.arch,
 				settings.f_act,
 				settings.epochs,
@@ -20,7 +20,7 @@ def main(argv):
 				settings.start_velocity,
 				settings.seed)
 	print("Learning multilayer perceptron...", end='\r')
-	accuracy_test = learning_mp(Dataset.x_test, Dataset.y_test)
+	accuracy_test = learning_mp(DS.x_test, DS.y_test)
 	print("\033[32mLearning multilayer perceptron done\033[37m")
 	if statkey & 0b1:
 		print_stat(accuracy_test)
@@ -34,7 +34,7 @@ def main(argv):
 def check_argv(argv):
 	statkey = 0
 	if len(argv) > 3:
-		print("\033[31mNeed only one or two arguments\033[37m")
+		print("\033[31mNeed arguments between zero and three\033[37m")
 		exit()
 	for i in argv:
 		if i != "-stat" and i != "-s" and\
@@ -103,10 +103,10 @@ def draw_graph():
 def write_dumpfile():
 	with open("dump.py", 'w') as file:
 		file.write(f"features = {settings.features}\n")
+		file.write(f"mean = {DS.mean.tolist()}\n")
+		file.write(f"std = {DS.std.tolist()}\n")
 		file.write(f"arch = {settings.arch}\n")
 		file.write(f"f_act = \"{settings.f_act}\"\n")
-		file.write(f"x_train_mean = {Dataset.mean.tolist()}\n")
-		file.write(f"x_train_std = {Dataset.std.tolist()}\n")
 		file.write(f"weight = [0] * {len(MP.weight)}\n")
 		for i in range(len(MP.weight)):
 			file.write(f"weight[{i}] = {MP.weight[i].tolist()}\n")
