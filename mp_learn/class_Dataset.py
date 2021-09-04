@@ -4,7 +4,7 @@ import pandas as pd
 class Dataset:
 
 	@staticmethod
-	def init_Dataset(dataset, percent_test, features, *scale_params):
+	def init_Dataset(dataset, features, percent_test, *scale_params):
 		df_train, df_test = Dataset.get_datasets(dataset, percent_test)
 		x_train, y_train = Dataset.separate_dataset(df_train, features)
 		x_test, y_test = Dataset.separate_dataset(df_test, features)

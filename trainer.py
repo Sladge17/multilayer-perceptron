@@ -3,14 +3,14 @@ import time
 import matplotlib.pyplot as plt
 
 import mp_learn.settings as settings
-from mp_learn.class_MP import *
 from mp_learn.class_Dataset import *
+from mp_learn.class_MP import *
 
 def main(argv):
 	statkey = check_argv(argv)
 	Dataset.init_Dataset(settings.dataset,
-						settings.percent_test,
-						settings.features)
+						settings.features,
+						settings.percent_test)
 	MP.init_MP(Dataset.x_train, Dataset.y_train,
 				settings.arch,
 				settings.f_act,
@@ -23,26 +23,33 @@ def main(argv):
 	accuracy_test = learning_mp(Dataset.x_test, Dataset.y_test)
 	print("\033[32mLearning multilayer perceptron done\033[37m")
 	if statkey & 0b1:
-		print_stats(accuracy_test)
+		print_stat(accuracy_test)
 	write_dumpfile()
 	print("\033[32mCreated dump file: dump.py\033[37m")
 	if statkey & 0b10:
-		plot_stats()	
+		write_report()
+	if statkey & 0b100:
+		draw_graph()
 
 def check_argv(argv):
 	statkey = 0
-	if len(argv) > 2:
+	if len(argv) > 3:
 		print("\033[31mNeed only one or two arguments\033[37m")
 		exit()
 	for i in argv:
-		if i != "-stat" and i != "-s" and i != "-graph" and i != "-g":
+		if i != "-stat" and i != "-s" and\
+			i != "report" and i != "-r" and\
+			i != "-graph" and i != "-g":
 			print("\033[31mUnknown argument\033[37m")
 			exit()
 		if i == "-stat" or i == "-s":
 			statkey |= 0b1
 			continue
-		if i == "-graph" or i == "-g":
+		if i == "-report" or i == "-r":
 			statkey |= 0b10
+			continue
+		if i == "-graph" or i == "-g":
+			statkey |= 0b100
 			continue
 	return statkey
 
@@ -59,7 +66,7 @@ def learning_mp(x_test, y_test):
 			exit()
 	return accuracy_test
 
-def print_stats(accuracy_test):
+def print_stat(accuracy_test):
 	print("Statistic:")
 	print(f"\tNumber of epochs: {MP.epochs}")
 	print(f"\tLast train error: {round(float(MP.error[0, -1]), 3)}")
@@ -68,7 +75,19 @@ def print_stats(accuracy_test):
 	print(f"\tLast valid accuracy: {round(float(MP.accuracy[1, -1]), 3)}%")
 	print(f"\033[33m\tTest accuracy: {round(accuracy_test, 3)}%\033[37m")
 
-def plot_stats():
+def write_report():
+	file_name = "report_{}".format(time.strftime("%d%m%y", time.localtime()))
+	with open(file_name, 'w') as file:
+		file.write("Epoch\tError train\t\tError test\t\tAccur train\t\tAccur test\n")
+		file.write(f"{'=' * 66}\n")
+		for i in range(MP.epochs):
+			file.write(f"{i + 1}\t\t\
+{round(MP.error[0, i].astype(float), 3)}\t\t\t\
+{round(MP.error[1, i].astype(float), 3)}\t\t\t\
+{round(MP.accuracy[0, i].astype(float), 3)}\t\t\t\
+{round(MP.accuracy[1, i].astype(float), 3)}\n")
+
+def draw_graph():
 	plt.figure(figsize=(18, 10))
 	plt.plot(range(settings.epochs), MP.error[0], label='error train')
 	plt.plot(range(settings.epochs), MP.accuracy[0], label='accuracy train')
