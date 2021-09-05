@@ -6,6 +6,21 @@ import mp_learn.settings as settings
 from mp_learn.class_DS import *
 from mp_learn.class_MP import *
 
+def dec_learnstat(func):
+	def wrap(x, y):
+		print("Learning multilayer perceptron...", end='\r')
+		result = func(x, y)
+		print("\033[32mLearning multilayer perceptron done\033[37m")
+		time.sleep(1)
+		return result
+	return wrap
+
+def dec_dumpstat(func):
+	def wrap():
+		func()
+		print("\033[32mCreated dump file: dump.py\033[37m")
+	return wrap
+
 def main(argv):
 	statkey = check_argv(argv)
 	DS.init_DS(settings.dataset,
@@ -19,13 +34,10 @@ def main(argv):
 				settings.batch,
 				settings.start_velocity,
 				settings.seed)
-	print("Learning multilayer perceptron...", end='\r')
 	accuracy_test = learning_mp(DS.x_test, DS.y_test)
-	print("\033[32mLearning multilayer perceptron done\033[37m")
 	if statkey & 0b1:
 		print_stat(accuracy_test)
 	write_dumpfile()
-	print("\033[32mCreated dump file: dump.py\033[37m")
 	if statkey & 0b10:
 		write_report()
 	if statkey & 0b100:
@@ -53,6 +65,7 @@ def check_argv(argv):
 			continue
 	return statkey
 
+@dec_learnstat
 def learning_mp(x_test, y_test):
 	time_start = time.time()
 	accuracy_test = 0
@@ -100,6 +113,7 @@ def draw_graph():
 	plt.grid()
 	plt.show()
 
+@dec_dumpstat
 def write_dumpfile():
 	with open("dump.py", 'w') as file:
 		file.write(f"features = {settings.features}\n")
