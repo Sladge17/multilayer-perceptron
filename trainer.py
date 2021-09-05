@@ -21,6 +21,12 @@ def dec_dumpstat(func):
 		print("\033[32mCreated dump file: dump.py\033[37m")
 	return wrap
 
+def dec_reportstat(func):
+	def wrap():
+		file_name = func()
+		print(f"\033[32mCreated report file: {file_name}\033[37m")
+	return wrap
+
 def main(argv):
 	statkey = check_argv(argv)
 	DS.init_DS(settings.dataset,
@@ -37,9 +43,9 @@ def main(argv):
 	accuracy_test = learning_mp(DS.x_test, DS.y_test)
 	if statkey & 0b1:
 		print_stat(accuracy_test)
-	write_dumpfile()
 	if statkey & 0b10:
 		write_report()
+	write_dumpfile()
 	if statkey & 0b100:
 		draw_graph()
 
@@ -88,6 +94,7 @@ def print_stat(accuracy_test):
 	print(f"\tLast valid accuracy: {round(float(MP.accuracy[1, -1]), 3)}%")
 	print(f"\033[33m\tTest accuracy: {round(accuracy_test, 3)}%\033[37m")
 
+@dec_reportstat
 def write_report():
 	file_name = "report_{}".format(time.strftime("%d%m%y", time.localtime()))
 	with open(file_name, 'w') as file:
@@ -99,6 +106,7 @@ def write_report():
 {round(MP.error[1, i].astype(float), 2):10}\t\t\
 {round(MP.accuracy[0, i].astype(float), 2):10}%\t\t\
 {round(MP.accuracy[1, i].astype(float), 2):9}%\n")
+	return file_name
 
 def draw_graph():
 	plt.figure(figsize=(18, 10))
