@@ -18,6 +18,12 @@ except ModuleNotFoundError:
 			print("\033Training file not found\033[37m")
 			exit()
 
+def dec_predictstat(func):
+	def wrap():
+		file_name = func()
+		print(f"\033[32mCreated prediction file: {file_name}\033[37m")
+	return wrap
+
 def main(argv):
 	statkey = check_argv(argv)
 	DSexe.init_DSexe(argv[0],
@@ -32,8 +38,7 @@ def main(argv):
 	if statkey:
 		accuracy = MPexe.get_accuracy(DSexe.get_y_exe(argv[0]))
 		print(f"Prediction accuracy: {round(accuracy, 2)}%")
-	file_name = write_prediction()
-	print(f"\033[32mCreated prediction file: {file_name}\033[37m")
+	write_prediction()
 
 def check_argv(argv):
 	if not len(argv) or len(argv) > 2:
@@ -48,8 +53,10 @@ def check_argv(argv):
 	statkey = 1
 	return statkey
 
+@dec_predictstat
 def write_prediction():
-	file_name = "prediction_{}".format(time.strftime("%d%m%y", time.localtime()))
+	file_name = "prediction_{}".\
+		format(time.strftime("%d%m%y", time.localtime()))
 	with open(file_name, 'w') as file:
 		for i in range(MPexe.predict.size):
 			file.write(f"{MPexe.predict[i]}\n")
