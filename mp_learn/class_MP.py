@@ -5,6 +5,7 @@ class MP:
 
 	@staticmethod
 	def init_MP(x_train, y_train,
+				x_test, y_test,
 				arch,
 				f_act,
 				epochs,
@@ -12,6 +13,10 @@ class MP:
 				batch,
 				start_velocity,
 				seed):
+		MP.x_train = x_train
+		MP.y_train = y_train
+		MP.x_test = x_test
+		MP.y_test = y_test
 		MP.arch = np.array([x_train.shape[1]] + arch, np.int8)
 		MP.f_act = f_act
 		MP.epochs = epochs
@@ -19,21 +24,12 @@ class MP:
 		MP.batch = batch
 		if seed > -1:
 			np.random.seed(seed)
-		MP.init_datasets(x_train, y_train)
 		MP.init_arch()
 		MP.border = np.zeros(2, np.int32)
 		MP.init_optimizer(start_velocity)
 		MP.init_metrics()
 		MP.xy_train = np.zeros_like(np.concatenate((MP.x_train, MP.y_train),
 													axis=1))
-
-	@staticmethod
-	def init_datasets(x_train, y_train):
-		border = int(x_train.shape[0] * 0.9)
-		MP.y_valid = y_train[border:]
-		MP.x_valid = x_train[border:]
-		MP.y_train = y_train[:border]
-		MP.x_train = x_train[:border]
 
 	@staticmethod
 	def init_arch():
@@ -82,9 +78,9 @@ class MP:
 			MP.error[0, epoch] = np.sum(MP.cross_entropy(MP.y_train))
 			MP.accuracy[0, epoch] = MP.get_accuracy(MP.y_train)
 			MP.shuffle_trainds()
-			MP.prediction(MP.x_valid)
-			MP.error[1, epoch] = np.sum(MP.cross_entropy(MP.y_valid))
-			MP.accuracy[1, epoch] = MP.get_accuracy(MP.y_valid)
+			MP.prediction(MP.x_test)
+			MP.error[1, epoch] = np.sum(MP.cross_entropy(MP.y_test))
+			MP.accuracy[1, epoch] = MP.get_accuracy(MP.y_test)
 
 	@staticmethod
 	def training():

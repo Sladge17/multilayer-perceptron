@@ -7,12 +7,11 @@ from mp_learn.class_DS import *
 from mp_learn.class_MP import *
 
 def dec_learnstat(func):
-	def wrap(x, y):
+	def wrap():
 		print("Learning multilayer perceptron...", end='\r')
-		result = func(x, y)
+		func()
 		print("\033[32mLearning multilayer perceptron done\033[37m")
 		time.sleep(1)
-		return result
 	return wrap
 
 def dec_dumpstat(func):
@@ -33,6 +32,7 @@ def main(argv):
 				settings.features,
 				settings.percent_test)
 	MP.init_MP(DS.x_train, DS.y_train,
+				DS.x_test, DS.y_test,
 				settings.arch,
 				settings.f_act,
 				settings.epochs,
@@ -40,9 +40,9 @@ def main(argv):
 				settings.batch,
 				settings.start_velocity,
 				settings.seed)
-	accuracy_test = learning_mp(DS.x_test, DS.y_test)
+	learning_mp()
 	if statkey & 0b1:
-		print_stat(accuracy_test)
+		print_stat()
 	if statkey & 0b10:
 		write_report()
 	write_dumpfile()
@@ -72,27 +72,22 @@ def check_argv(argv):
 	return statkey
 
 @dec_learnstat
-def learning_mp(x_test, y_test):
+def learning_mp():
 	time_start = time.time()
-	accuracy_test = 0
-	while accuracy_test < settings.target_accuracy:
+	while MP.accuracy[1, -1] < settings.target_accuracy:
 		MP.reinit_weight()
 		MP.learning()
-		MP.prediction(x_test)
-		accuracy_test = MP.get_accuracy(y_test)
 		if time.time() - time_start > 10:
 			print("\033[31mСalculation error, try again\033[37m")
 			exit()
-	return accuracy_test
 
-def print_stat(accuracy_test):
-	print("Statistic:")
+def print_stat():
+	print("Statistics:")
 	print(f"\tNumber of epochs: {MP.epochs}")
-	print(f"\tLast train error: {round(float(MP.error[0, -1]), 3)}")
-	print(f"\tLast valid error: {round(float(MP.error[1, -1]), 3)}")
-	print(f"\tLast train accuracy: {round(float(MP.accuracy[0, -1]), 3)}%")
-	print(f"\tLast valid accuracy: {round(float(MP.accuracy[1, -1]), 3)}%")
-	print(f"\033[33m\tTest accuracy: {round(accuracy_test, 3)}%\033[37m")
+	print(f"\tLast train error: {round(float(MP.error[0, -1]), 2)}")
+	print(f"\tLast test error: {round(float(MP.error[1, -1]), 2)}")
+	print(f"\tLast train accuracy: {round(float(MP.accuracy[0, -1]), 2)}%")
+	print(f"\033[33m\tLast test accuracy: {round(float(MP.accuracy[1, -1]), 2)}%\033[37m")
 
 @dec_reportstat
 def write_report():
@@ -112,8 +107,8 @@ def draw_graph():
 	plt.figure(figsize=(18, 10))
 	plt.plot(range(settings.epochs), MP.error[0], label='error train')
 	plt.plot(range(settings.epochs), MP.accuracy[0], label='accuracy train')
-	plt.plot(range(settings.epochs), MP.error[1], label='error valid', linestyle='--')
-	plt.plot(range(settings.epochs), MP.accuracy[1], label='accuracy train', linestyle='--')
+	plt.plot(range(settings.epochs), MP.error[1], label='error test', linestyle='--')
+	plt.plot(range(settings.epochs), MP.accuracy[1], label='accuracy test', linestyle='--')
 	plt.title('Learning progress')
 	plt.xlabel('epochs')
 	plt.ylabel('error / accuracy')
