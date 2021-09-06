@@ -47,6 +47,13 @@ class MPexe:
 									else 'B', MPexe.z[-1]))
 
 	@staticmethod
+	def cross_entropy(y_exe):
+		cross_entropy = -np.log([MPexe.z[-1][i, 0 if y_exe[i] == 'M' else 1]\
+								for i in range(y_exe.size)])
+		cross_entropy = np.sum(cross_entropy).astype(float)
+		return cross_entropy
+
+	@staticmethod
 	def get_accuracy(y_exe):
 		accuracy = 0
 		for i in range(MPexe.predict.size):

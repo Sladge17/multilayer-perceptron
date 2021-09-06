@@ -8,6 +8,7 @@ class DSexe:
 		df = DSexe.get_datasets(dataset)
 		mean = np.array(mean, np.float32)
 		std = np.array(std, np.float32)
+		DSexe.y_exe = df[1].values
 		DSexe.extract_data(df, features, mean, std)
 
 	@staticmethod
@@ -22,8 +23,3 @@ class DSexe:
 	@staticmethod
 	def extract_data(df, features, mean, std):
 		DSexe.x_exe = ((df[features] - mean) / std).values
-
-	@staticmethod
-	def get_y_exe(dataset):
-		y_exe = DSexe.get_datasets(dataset)[1].values
-		return y_exe

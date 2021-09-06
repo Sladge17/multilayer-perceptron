@@ -36,7 +36,9 @@ def main(argv):
 					dump.weight)
 	MPexe.prediction()
 	if statkey:
-		accuracy = MPexe.get_accuracy(DSexe.get_y_exe(argv[0]))
+		error = MPexe.cross_entropy(DSexe.y_exe)
+		accuracy = MPexe.get_accuracy(DSexe.y_exe)
+		print(f"Prediction error: {round(error, 2)}")
 		print(f"Prediction accuracy: {round(accuracy, 2)}%")
 	write_prediction()
 
