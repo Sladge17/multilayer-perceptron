@@ -2,9 +2,9 @@ import sys
 import time
 import matplotlib.pyplot as plt
 
-import mp_learn.settings as settings
-from mp_learn.class_DS import *
-from mp_learn.class_MP import *
+import mp_train.settings as settings
+from mp_train.class_DS import *
+from mp_train.class_MP import *
 
 def dec_learnstat(func):
 	def wrap():
@@ -118,7 +118,7 @@ def draw_graph():
 
 @dec_dumpstat
 def write_dumpfile():
-	with open("dump.py", 'w') as file:
+	with open("mp_predict/dump.py", 'w') as file:
 		file.write(f"features = {settings.features}\n")
 		file.write(f"mean = {DS.mean.tolist()}\n")
 		file.write(f"std = {DS.std.tolist()}\n")

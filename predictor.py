@@ -2,21 +2,9 @@ import sys
 import os
 import time
 
-from mp_learn.class_DSexe import *
-from mp_learn.class_MPexe import *
-try:
-	import dump
-except ModuleNotFoundError:
-	try:
-		os.system("python3 trainer.py")
-		import dump
-	except:
-		try:
-			os.system("python trainer.py")
-			import dump
-		except:
-			print("\033Training file not found\033[37m")
-			exit()
+from mp_predict.class_DSexe import *
+from mp_predict.class_MPexe import *
+import mp_predict.dump as dump
 
 def dec_predictstat(func):
 	def wrap():

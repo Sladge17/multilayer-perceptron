@@ -1,5 +1,5 @@
 import numpy as np
-from mp_learn.funcs import *
+from mp_train.funcs import *
 
 class MP:
 
